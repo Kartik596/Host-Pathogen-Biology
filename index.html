@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Advanced Host-Pathogen Biology</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    :root {
+      --bg-dark: #0a192f;
+      --bg-light: #112240;
+      --text-primary: #ccd6f6;
+      --text-secondary: #8892b0;
+      --accent-primary: #64ffda;
+      --accent-secondary: #ffc300;
+      --card-border: #1a2c4e;
+    }
+    body {
+      margin: 0;
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    header {
+      padding: 4rem 1rem 2rem;
+      min-height: 250px; /* Ensures space for header content */
+    }
+    header h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      margin: 0;
+      font-weight: 700;
+    }
+    header h1 .typing-container {
+        height: 1.2em; /* Prevents layout shift during typing */
+    }
+    header p {
+      color: var(--text-secondary);
+      max-width: 600px;
+    }
+    #bubbling-background {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bubble {
+        position: absolute;
+        bottom: -50px;
+        background: rgba(100, 255, 218, 0.15);
+        border-radius: 50%;
+        animation-name: rise;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+    }
+    @keyframes rise {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-110vh); }
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .topic-card {
+      background: var(--bg-light);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .topic-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px -15px rgba(2,12,27,0.7);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      margin-right: 1rem;
+      color: var(--accent-primary);
+    }
+    .topic-card h3 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+    .topic-card p {
+      color: var(--text-secondary);
+      flex-grow: 1;
+    }
+    .learn-more-btn {
+      border: 1px solid var(--accent-primary);
+      background: transparent;
+      color: var(--accent-primary);
+      padding: .75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background 0.3s;
+      align-self: flex-start;
+    }
+    .learn-more-btn:hover {
+      background: rgba(100,255,218,0.1);
+    }
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(10,25,47,0.9);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .modal.show {
+      animation: fadeIn 0.3s both;
+    }
+    .modal-content {
+      background: var(--bg-light);
+      margin: 5% auto;
+      padding: 2.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      width: 80%; max-width: 900px;
+      opacity: 0;
+      transform: translateY(50px) scale(.95);
+      position: relative;
+    }
+    .modal.show .modal-content {
+      animation: slideUpFadeIn 0.4s ease-out both;
+    }
+    @keyframes fadeIn { from {opacity:0} to {opacity:1} }
+    @keyframes slideUpFadeIn { to {opacity:1;transform:translateY(0) scale(1)} }
+    .close-btn {
+      position: absolute;
+      top: 1rem; right: 1.5rem;
+      font-size: 2rem; cursor: pointer;
+      color: var(--text-secondary);
+      transition: color 0.3s;
+    }
+    .close-btn:hover { color: var(--accent-primary); }
+    .modal-section {
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .modal.show .modal-section {
+      animation: fadeInSection 0.5s ease-out both;
+    }
+    @keyframes fadeInSection { to {opacity:1;transform:translateY(0)} }
+    .modal.show .modal-section:nth-child(2){animation-delay:.1s}
+    .modal.show .modal-section:nth-child(3){animation-delay:.2s}
+    .modal.show .modal-section:nth-child(4){animation-delay:.3s}
+    .modal.show .modal-section:nth-child(5){animation-delay:.4s}
+    .modal-section h4 {
+      color: var(--accent-secondary);
+      margin-bottom: .5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.5rem;
+    }
+    .modal-section ul {
+      padding-left: 20px;
+      list-style-type: none;
+    }
+     .modal-section ul li {
+        padding-left: 1.5rem;
+        position: relative;
+        margin-bottom: 0.5rem;
+    }
+     .modal-section ul li::before {
+        content: '➤';
+        color: var(--accent-primary);
+        position: absolute;
+        left: 0;
+    }
+    .source-link {
+      margin-right: 1rem;
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+    .view-info-btn {
+      background: var(--accent-secondary);
+      color: var(--bg-dark);
+      padding: .4rem .8rem;
+      border: none; border-radius: 4px;
+      font-size: .8rem; font-weight: 600;
+      cursor: pointer; transition: background .3s;
+    }
+    .view-info-btn:hover { background: #e6af00; }
+    /* Timeline & lists */
+    .timeline {
+      position: relative;
+      list-style: none; padding: 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px; top: 0; bottom: 0;
+      width: 2px; background: var(--card-border);
+    }
+    .timeline-item {
+      position: relative;
+      padding-left: 40px; margin-bottom: 1.5rem;
+    }
+     .timeline-item::before {
+        content: '' !important;
+    }
+    .timeline-dot {
+      position: absolute; left: 0; top: 5px;
+      width: 20px; height: 20px;
+      border: 3px solid var(--accent-primary);
+      border-radius: 50%; background: var(--bg-light);
+    }
+    .timeline-date {
+      display: block;
+      font-weight: bold;
+      color: var(--accent-secondary);
+      margin-bottom: .25rem;
+    }
+    .authors-list, .organizations-list {
+      display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0;
+    }
+    .author-tag {
+      background: rgba(100,255,218,0.1);
+      color: var(--accent-primary);
+      padding: .3rem .6rem;
+      border: 1px solid rgba(100,255,218,0.3);
+      border-radius: 20px;
+      font-size: .8rem;
+    }
+    .org-tag {
+      background: rgba(255,195,0,0.1);
+      color: var(--accent-secondary);
+      padding: .3rem .6rem;
+      border: 1px solid rgba(255,195,0,0.3);
+      border-radius: 20px;
+      font-size: .8rem;
+    }
+    .key-findings {
+      counter-reset: findings;
+      list-style-type: none;
+    }
+    .key-findings li {
+      counter-increment: findings;
+      margin-bottom: 1rem;
+      padding-left: 2.5rem;
+      position: relative;
+    }
+    .key-findings li::before {
+      content: counter(findings);
+      position: absolute;
+      left: 0; top: 0;
+      background: var(--accent-primary);
+      color: var(--bg-dark);
+      width: 1.5rem; height: 1.5rem;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="bubbling-background"></div>
+  <div class="container">
+    <header>
+      <h1>Advanced Topics in<br><span id="typewriter" class="typing"></span></h1>
+      <p>Interactive, research-grade resource for molecular mechanisms of mycobacterial pathogenesis. For PhD researchers.</p>
+    </header>
+    <main>
+      <div class="card-grid" id="card-grid"></div>
+    </main>
+  </div>
+  <div id="modal-container"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paperDetails = {
+          conyers_2024: {
+            title: 'Treatment for non-tuberculous mycobacteria: challenges and prospects',
+            authors: ['Liberty E. Conyers', 'Bernadette M. Saunders'],
+            organizations: ['University of Technology Sydney', 'School of Life Sciences'],
+            keyWork: [
+              'Comprehensive analysis of current NTM treatment regimens and their limitations.',
+              'Systematic review of 50+ clinical trials for new NTM therapies on ClinicalTrials.gov.',
+              'Analysis of MAC treatment outcomes: 45-70% culture conversion with 60% relapse.',
+              'Evaluation of emerging combinations including Bedaquiline and Linezolid.',
+              'Investigation of biofilm formation as a major treatment barrier.',
+            ],
+            opportunities: [
+              'Develop novel anti-biofilm agents specifically targeting NTM biofilms.',
+              'Investigate combination therapies with bacteriophages and antibiotics.',
+              'Research personalized medicine approaches based on host genetics (CFTR, STAT1).',
+            ]
+          },
+          falkinham_2003: {
+            title: 'Health Impacts of Environmental Mycobacteria',
+            authors: ['Todd P. Primm', 'Christie A. Lucero', 'Joseph O. Falkinham III'],
+            organizations: ['University of Texas at El Paso', 'Virginia Tech'],
+            keyWork: [
+              'Analysis of mycobacterial ecology in environmental sources.',
+              'Documentation of chlorine resistance mechanisms in municipal water systems.',
+              'Investigation of mycobacterial survival strategies and biofilm formation.',
+              'Analysis of species shift from M. scrofulaceum to M. avium due to chlorination.',
+            ],
+            opportunities: [
+              'Develop mycobacteria-specific water treatment technologies.',
+              'Research mycobacterial ecology in engineered water systems.',
+              'Investigate mycobacterial-host microbiome interactions.',
+            ]
+          },
+          bernut_2022: {
+            title: 'Updated Review on the Mechanisms of Pathogenicity in Mycobacterium abscessus',
+            authors: ['Audrey Bernut', 'Fabienne Giraud-Gatineau', 'Jean-Louis Herrmann'],
+            organizations: ['Université Versailles Saint-Quentin', 'INSERM', 'Institut Pasteur'],
+            keyWork: [
+              'Analysis of M. abscessus intracellular survival mechanisms.',
+              'Investigation of glycopeptidolipids (GPLs) role in pathogenesis.',
+              'Study of smooth-to-rough morphotype switching mechanisms.',
+              'Analysis of ESX secretion systems in virulence.',
+            ],
+            opportunities: [
+              'Develop GPL biosynthesis inhibitors to lock bacteria in the immunogenic rough form.',
+              'Investigate ESX-4 secretion system as a therapeutic target.',
+              'Research biofilm disruption strategies specific for M. abscessus.',
+            ]
+          }
+        };
+        
+        const topics = [
+          {
+            id: 'ntm',
+            title: 'Non-Tuberculous Mycobacteria',
+            icon: 'beaker',
+            summary: 'Diverse environmental mycobacteria with complex lipid-rich cell walls.',
+            modalHTML: `<h2>Non-Tuberculous Mycobacteria</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>NTM comprise over 200 species found in soil and water. Their defining characteristic is a mycolic acid–rich cell envelope, conferring intrinsic resistance to antibiotics and disinfectants. They cause opportunistic pulmonary and skin infections, especially in patients with structural lung disease.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>Impermeable cell wall:</strong> Mycolic acids produce a hydrophobic barrier reducing drug uptake.</li><li><strong>Efflux pumps:</strong> Tap-like pumps expel diverse antibiotics.</li><li><strong>Biofilms:</strong> Formation on surfaces protects against host defenses and treatment.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 studies link CFTR and STAT1 host variants to NTM susceptibility. Bacteriophage therapy shows promise against resistant NTM strains.</p>
+                    <p><strong>Relevance:</strong> Rising incidence in aging and COPD/bronchiectasis patients strains healthcare. Treatments are lengthy, toxic, and often unsuccessful, necessitating innovative therapies.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1950s</div>NTM classified separately from M. tuberculosis.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2007</div>ATS/IDSA guidelines define NTM disease diagnosis and treatment.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2020s</div>Genomic epidemiology maps global NTM transmission patterns.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2024</div>Phage-based therapies enter clinical trials.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Conyers & Saunders (2024)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11180805/" target="_blank" class="source-link">Read Paper</a> <button class="view-info-btn" data-paper-id="conyers_2024">View Info</button></li>
+                        <li><strong>Falkinham III (2003)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1241595/" target="_blank" class="source-link">Read Paper</a> <button class="view-info-btn" data-paper-id="falkinham_2003">View Info</button></li>
+                        <li><strong>Griffith et al. (2007)</strong> <a href="https://www.atsjournals.org/doi/full/10.1164/rccm.200604-571ST" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'mabs',
+            title: 'Mycobacterium abscessus',
+            icon: 'chemical',
+            summary: 'Rapidly growing, drug-resistant NTM with smooth/rough morphotypes.',
+            modalHTML: `<h2>Mycobacterium abscessus</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>M. abscessus causes severe infections in CF and bronchiectasis patients. Smooth (GPL-coated) vs. rough (GPL-deficient) forms dictate immune response and virulence.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>S-to-R transition:</strong> GPL loss unmasks trehalose dimycolate, triggering TLR2-mediated hyper-inflammation.</li><li><strong>erm(41) gene:</strong> Induces macrolide resistance via 23S rRNA methylation.</li><li><strong>Cording:</strong> Rough form grows in cords, evading phagocytosis.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 Bernut et al. showed ESX-4–mediated macrophage apoptosis. Scientists are developing erm(41) inhibitors.</p>
+                    <p><strong>Relevance:</strong> In CF clinics, infection often precludes lung transplant. Novel anti-virulence therapies are critical.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1990s</div>Emergence as CF pathogen.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2013</div>Link between morphotypes and virulence.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2022</div>Genomic transmission studies in hospitals.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2024</div>Macrophage apoptosis mechanism identified.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Bernut et al. (2022)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9866562/" target="_blank" class="source-link">Read Paper</a> <button class="view-info-btn" data-paper-id="bernut_2022">View Info</button></li>
+                        <li><strong>Howard et al. (2013)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3911423/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Nessar et al. (2012)</strong> <a href="https://academic.oup.com/jac/article/67/4/810/710174" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'celegans',
+            title: 'C. elegans Model',
+            icon: 'petri',
+            summary: 'Transparent nematode for dissecting conserved innate immunity.',
+            modalHTML: `<h2>C. elegans Host Model</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p><em>C. elegans</em> is genetically tractable with conserved p38/MAPK and insulin-like pathways. Its transparency allows live imaging of infection dynamics and host responses.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>PMK-1/p38 MAPK:</strong> Central to defense against Pseudomonas aeruginosa.</li><li><strong>DAF-2/DAF-16 insulin signaling:</strong> Regulates longevity and immunity.</li><li><strong>Neuro-immune crosstalk:</strong> Sensory neurons modulate pathogen avoidance.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 multi-kingdom studies reveal fungal-bacterial co-infection dynamics. 2025 work highlights native microbiome priming of host immunity.</p>
+                    <p><strong>Relevance:</strong> Enables high-throughput genetic and drug screens. Findings often translate to mammalian innate immunity research.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2000</div>First P. aeruginosa infection model.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2012</div>Identification of key immune pathways.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2018</div>Discovery of neuro-immune regulation.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2024</div>Expansion to microbiome and co-infections.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Kim & Ausubel (2012)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3302602/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Cohen et al. (2024)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11241598/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Ewbank (2018)</strong> <a href="https://www.frontiersin.org/articles/10.3389/fimmu.2018.00774/full" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'pathogenesis',
+            title: 'Pathogenesis Mechanisms',
+            icon: 'chemical',
+            summary: 'Molecular strategies pathogens use to cause disease.',
+            modalHTML: `<h2>Pathogenesis Mechanisms</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>Pathogenesis maps how microbes adhere, invade, evade defenses, and damage host tissues, driven by virulence factors and host interactions.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>Adhesins & invasins:</strong> Surface proteins facilitate host cell binding and entry.</li><li><strong>Secretion systems:</strong> Inject effectors to subvert host signaling (e.g., Type III, IV, VII).</li><li><strong>Immune evasion:</strong> Capsules, proteases, and apoptosis manipulation enable persistence.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 proteomic screens define new host-pathogen interaction networks. 2025 metabolomic studies reveal pathogen-driven host metabolic rewiring (Warburg effect).</p>
+                    <p><strong>Relevance:</strong> Targeting virulence factors offers alternatives to antibiotics with reduced resistance emergence.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1880s</div>Koch’s postulates formulated.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1980s</div>Molecular Koch’s postulates established.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2000s</div>Secretion systems identified as key virulence mechanisms.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2024</div>Immunometabolism emerges as a pathogenesis frontier.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Finlay & McFadden (2024)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10912505/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Hentschel et al. (2024)</strong> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11308195/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Casadevall & Pirofski (1999)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC97744/" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'p38',
+            title: 'p38 MAPK Pathway',
+            icon: 'beaker',
+            summary: 'Key stress- and infection-responsive signaling cascade.',
+            modalHTML: `<h2>p38 MAPK Pathway</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>p38 MAPK is activated by MKK3/6 in response to cytokines/stress, phosphorylating transcription factors and kinases that drive inflammatory gene expression.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>Activation by TLRs:</strong> Pathogen molecules trigger upstream kinases.</li><li><strong>MK2-mediated mRNA stabilization:</strong> Enhances cytokine production.</li><li><strong>Pathogen effectors:</strong> Some block or exploit p38 signaling.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2023 discovery of isoform-specific immunometabolic roles. p38 inhibitors trialed for inflammatory diseases.</p>
+                    <p><strong>Relevance:</strong> Modulating p38 without broad immunosuppression is a therapeutic challenge and opportunity.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1994</div>p38 identified as stress kinase.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2000</div>Roles in TNF-α regulation described.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2014</div>p38 functions in macrophage inflammation reviewed.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2023</div>Immunometabolism by p38γ/δ characterized.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Cuadrado & Nebreda (2014)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3977509/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Porcu et al. (2023)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10341180/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Ono & Han (2022)</strong> <a href="https://www.nature.com/articles/s41598-022-09528-8" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'immune_mod',
+            title: 'Immune Modulation',
+            icon: 'chemical',
+            summary: 'How pathogens manipulate host immunity via effectors.',
+            modalHTML: `<h2>Immune Modulation</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>Pathogens secrete diverse effectors that target NF-κB, JAK-STAT, and antigen presentation, reshaping host immunity to favor survival.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>Effector enzymes:</strong> Phosphatases and proteases that disable signaling proteins.</li><li><strong>Extracellular vesicles:</strong> Deliver RNAs and proteins to distal immune cells.</li><li><strong>Molecular mimicry:</strong> Pathogen proteins mimic host regulators.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 identification of pathogen microRNAs modulating hundreds of immune genes. Checkpoint inhibitors explored for chronic infection therapy.</p>
+                    <p><strong>Relevance:</strong> Counteracting pathogen-induced suppression can restore protective immunity in chronic diseases.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1990s</div>Viral MHC evasion first described.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2000s</li>Effector targeting of host signaling documented.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2010s</div>Treg and MDSC roles defined.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2020s</div>Non-coding RNA–mediated modulation emerges.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Iwasaki & Medzhitov (2015)</strong> <a href="https://www.nature.com/articles/nri3787" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Finlay (2019)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6406335/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>O'Garra et al. (2008)</strong> <a href="https://www.annualreviews.org/doi/10.1146/annurev.immunol.26.021607.090245" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'lysosome',
+            title: 'Lysosome Biogenesis Suppression',
+            icon: 'petri',
+            summary: 'Intracellular survival by arresting phagosome maturation.',
+            modalHTML: `<h2>Lysosome Biogenesis Suppression</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>Pathogens maintain mTORC1 on the phagosome to block TFEB/TFE3 nuclear translocation, preventing lysosomal gene expression and phagosome-lysosome fusion.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>mTORC1 hijacking:</strong> Keeps TFEB phosphorylated in cytoplasm.</li><li><strong>Coat retention:</strong> Coronin-1 prevents fusion protein recruitment.</li><li><strong>Lipid effectors:</strong> ManLAM disrupts Ca²⁺ and PI3P required for maturation.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 discovery of ubiquitin-mediated degradation of VAMP8, a key SNARE protein for fusion, revealing new evasion tactic.</p>
+                    <p><strong>Relevance:</strong> Therapies that activate TFEB or block VAMP8 ubiquitination can restore phagolysosomal killing in host-directed therapies.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1990s</div>Phagosome arrest first described in M. tuberculosis.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2009</div>TFEB defined as lysosomal biogenesis master regulator.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2017</div>Link between mTORC1 and TFEB in infection established.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2024</div>Ubiquitin ligase targeting of VAMP8 described.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Settembre et al. (2011)</strong> <a href="https://www.cell.com/cell/fulltext/S0092-8674(11)00755-X" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Coutinho-Silva (2018)</strong> <a href="https://www.tandfonline.com/doi/full/10.1080/15548627.2017.1313943" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Deretic (2020)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7010707/" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'evolution',
+            title: 'Evolution of Interaction',
+            icon: 'beaker',
+            summary: 'Coevolutionary arms race driving adaptation on both sides.',
+            modalHTML: `<h2>Evolution of Interaction</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>Host-pathogen interactions undergo reciprocal evolution (“arms race”), shaped by selection on immune genes and pathogen virulence factors, with HGT accelerating adaptation.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>Red Queen dynamics:</strong> Continuous adaptation to maintain fitness relative to pathogens.</li><li><strong>HGT:</strong> Acquisition of virulence and resistance genes from other microbes.</li><li><strong>Host jumps:</strong> Pathogens cross species barriers, leading to specialization.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2024 computational inference of host-pathogen interaction matrices enables mapping of coevolutionary hotspots.</p>
+                    <p><strong>Relevance:</strong> Guides design of evolution-proof vaccines and prediction of emerging zoonoses.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">1973</div>Red Queen Hypothesis formulated.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2000s</div>Experimental coevolution in bacteria and phages documented.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2015</div>Ecological factors in coevolution demonstrated.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2024</div>High-resolution computational coevolution mapping achieved.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Brockhurst et al. (2024)</strong> <a href="https://academic.oup.com/mbe/article/41/9/msae176/7739069" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Stern & Sorek (2006)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3274958/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Koskella (2015)</strong> <a href="https://royalsocietypublishing.org/doi/10.1098/rspb.2014.2297" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          },
+          {
+            id: 'gpls',
+            title: 'M. abscessus Glycopeptidolipids',
+            icon: 'petri',
+            summary: 'Surface lipids regulating colonization vs. invasive disease.',
+            modalHTML: `<h2>Glycopeptidolipids in M. abscessus</h2>
+                <div class="modal-section">
+                    <h4>In-Depth Explanation</h4>
+                    <p>GPLs on the smooth form mask PAMPs and support sliding motility; their loss in rough form triggers hyperinflammatory responses and cord formation.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Molecular Mechanisms</h4>
+                    <ul><li><strong>Stealth masking:</strong> GPL layer sterically hinders TLR2 recognition of underlying lipids.</li><li><strong>Biofilm initiation:</strong> GPLs facilitate initial attachment and matrix formation.</li><li><strong>Inflammation in R form:</strong> Absence of GPL exposes lipids that provoke TNF-α–driven damage.</li></ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Recent Breakthroughs & Clinical Relevance</h4>
+                    <p><strong>Breakthroughs:</strong> 2020 genotype-to-phenotype studies establish GPL status as a prognostic marker for disease severity.</p>
+                    <p><strong>Relevance:</strong> Targeting GPL biosynthesis could shift bacteria to more immunogenic forms and improve clearance.</p>
+                </div>
+                <div class="modal-section">
+                    <h4>Research Timeline</h4>
+                    <ul class="timeline">
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2008</div>Comprehensive GPL structure-function reviewed.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2013</div>Clinical phenotypes of S/R isolates differentiated.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2016</div>Macrophage interaction contrasts studied.</li>
+                        <li class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">2020</div>GPL genotype linked to clinical outcomes.</li>
+                    </ul>
+                </div>
+                <div class="modal-section">
+                    <h4>Key Credible Sources</h4>
+                    <ul>
+                        <li><strong>Rhoades et al. (2008)</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2733780/" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Whangsuk et al. (2020)</strong> <a href="https://academic.oup.com/jid/article/221/Supplement_2/S257/5807665" target="_blank" class="source-link">Read Paper</a></li>
+                        <li><strong>Ripoll et al. (2016)</strong> <a href="https://royalsocietypublishing.org/doi/10.1098/rsob.160185" target="_blank" class="source-link">Read Paper</a></li>
+                    </ul>
+                </div>`
+          }
+        ];
+
+        const iconSvgs = {
+          beaker: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M7 2L5 4V17C5 18.1046 5.8954 19 7 19H17C18.1046 19 19 18.1046 19 17V4L17 2H7ZM7 4H17V5H7V4ZM7 6H17V17H7V6Z"/><path d="M9 8H15V10H9V8Z"/></svg>',
+          chemical: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"/><path d="M12 6C11.45 6 11 6.45 11 7V11H7C6.45 11 6 11.45 6 12C6 12.55 6.45 13 7 13H11V17C11 17.55 11.45 18 12 18C12.55 18 13 17.55 13 17V13H17C17.55 13 18 12.55 18 12C18 11.45 17.55 11 17 11H13V7C13 6.45 12.55 6 12 6Z"/></svg>',
+          petri: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 3C7.03 3 3 7.03 3 12C3 16.97 7.03 21 12 21C16.97 21 21 16.97 21 12C21 7.03 16.97 3 12 3ZM12 19C8.13 19 5 15.87 5 12C5 8.13 8.13 5 12 5C15.87 5 19 8.13 19 12C19 15.87 15.87 19 12 19Z"/><path d="M12 7C9.24 7 7 9.24 7 12C7 14.76 9.24 17 12 17C14.76 17 17 14.76 17 12C17 9.24 14.76 7 12 7ZM12 15C10.34 15 9 13.66 9 12C9 10.34 10.34 9 12 9C13.66 9 15 10.34 15 12C15 13.66 13.66 15 12 15Z"/></svg>'
+        };
+
+        const cardGrid = document.getElementById('card-grid');
+        const modalContainer = document.getElementById('modal-container');
+        const typewriterTarget = document.getElementById('typewriter');
+        const textToType = 'Host-Pathogen Biology';
+
+        function typeWriter(element, text, i = 0) {
+            if (!element) return;
+            if (i === 0) element.innerHTML = '';
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                setTimeout(() => typeWriter(element, text, i + 1), 100);
+            }
+        }
+        
+        // Create cards and placeholder modals on page load
+        topics.forEach(topic => {
+            const card = document.createElement('div');
+            card.className = 'topic-card';
+            card.innerHTML = `
+                <div class="card-header">
+                <div class="card-icon">${iconSvgs[topic.icon]}</div>
+                <h3>${topic.title}</h3>
+                </div>
+                <p>${topic.summary}</p>
+                <button class="learn-more-btn" data-id="${topic.id}">Learn More</button>
+            `;
+            cardGrid.appendChild(card);
+            
+            const modal = document.createElement('div');
+            modal.id = `${topic.id}-modal`;
+            modal.className = 'modal';
+            modalContainer.appendChild(modal);
+        });
+        
+        // Bubble animation
+        const bubbleContainer = document.getElementById('bubbling-background');
+        function createBubble() {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = Math.random() * 20 + 5;
+            bubble.style.width = `${size}px`;
+            bubble.style.height = `${size}px`;
+            bubble.style.left = `${Math.random() * 100}vw`;
+            bubble.style.animationDuration = `${Math.random() * 8 + 6}s`;
+            bubble.style.animationDelay = `${Math.random() * 4}s`;
+            bubbleContainer.appendChild(bubble);
+            setTimeout(() => bubble.remove(), 12000);
+        }
+        setInterval(createBubble, 250);
+
+        function openModal(id) {
+            const modal = document.getElementById(`${id}-modal`);
+            if (modal) {
+                const topicData = topics.find(t => t.id === id);
+                modal.innerHTML = `<div class="modal-content"><span class="close-btn" data-id="${id}">&times;</span>${topicData.modalHTML}</div>`;
+                modal.style.display = 'block';
+                setTimeout(() => modal.classList.add('show'), 10);
+            }
+        }
+        
+        function closeModal(id) {
+            const modal = document.getElementById(`${id}-modal`);
+            if(modal) {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    modal.innerHTML = '';
+                }, 500);
+            }
+        }
+
+        function showPaperInfo(paperId) {
+            if (!paperDetails[paperId]) return;
+            const paper = paperDetails[paperId];
+            const paperModal = document.createElement('div');
+            paperModal.className = 'modal paper-info-modal';
+            paperModal.id = `paper-info-${paperId}`;
+            paperModal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close-btn" data-paper-id="${paperId}">&times;</span>
+                    <h2>${paper.title}</h2>
+                    <div class="modal-section">
+                        <h4>👥 Key Researchers</h4>
+                        <div class="authors-list">
+                            ${paper.authors.map(author => `<span class="author-tag">${author}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>🏛️ Key Organizations</h4>
+                        <div class="organizations-list">
+                            ${paper.organizations.map(org => `<span class="org-tag">${org}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-section">
+                        <h4>🔬 Key Research Findings</h4>
+                        <ul class="key-findings">
+                            ${paper.keyWork.map(work => `<li>${work}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="modal-section">
+                        <h4>🚀 Future Research Opportunities</h4>
+                        <ul>
+                            ${paper.opportunities.map(opp => `<li>${opp}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(paperModal);
+            setTimeout(() => {
+                paperModal.style.display = 'block';
+                paperModal.classList.add('show');
+            }, 10);
+        }
+
+        function closePaperInfo(paperId) {
+            const modal = document.getElementById(`paper-info-${paperId}`);
+            if(modal) {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(modal)) {
+                        document.body.removeChild(modal);
+                    }
+                }, 500);
+            }
+        }
+
+        document.addEventListener('click', e => {
+            if (e.target.matches('.learn-more-btn')) {
+                openModal(e.target.dataset.id);
+            } else if (e.target.matches('.view-info-btn')) {
+                showPaperInfo(e.target.dataset.paperId);
+            } else if (e.target.matches('.close-btn')) {
+                const modal = e.target.closest('.modal');
+                if (modal.classList.contains('paper-info-modal')) {
+                    closePaperInfo(modal.id.replace('paper-info-', ''));
+                } else {
+                    closeModal(modal.id.replace('-modal', ''));
+                }
+            } else if (e.target.matches('.modal')) {
+                const modalId = e.target.id;
+                if(modalId.startsWith('paper-info-')) {
+                    closePaperInfo(modalId.replace('paper-info-',''));
+                } else {
+                    closeModal(modalId.replace('-modal',''));
+                }
+            }
+        });
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(modal => {
+                    if (modal.classList.contains('paper-info-modal')) {
+                        closePaperInfo(modal.id.replace('paper-info-', ''));
+                    } else {
+                        closeModal(modal.id.replace('-modal', ''));
+                    }
+                });
+            }
+        });
+
+        // Start typewriter on load
+        typeWriter(typewriterTarget, textToType);
+    });
+  </script>
+</body>
+</html>
